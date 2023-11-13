@@ -11,6 +11,10 @@ import "./Register.css";
 const Register = () => {
   const { enqueueSnackbar } = useSnackbar();
 
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [loading, setLoading] = useState(false);
 
   // TODO: CRIO_TASK_MODULE_REGISTER - Implement the register function
   /**
@@ -36,6 +40,40 @@ const Register = () => {
    * }
    */
   const register = async (formData) => {
+    if (
+      validateInput({
+        username: `${username}`,
+        password: `${password}`,
+        confirmPassword: `${confirmPassword}`,
+      })
+    ) {
+      const body = {
+        username: `${username}`,
+        password: `${password}`,
+      };
+
+      try {
+        setLoading(true);
+        const res = await axios.post(`${config.endpoint}/auth/register`, body);
+
+        if (res.status === 201) {
+          setUsername("");
+          setPassword("");
+          setConfirmPassword("");
+          enqueueSnackbar("Registered successfully", { variant: "success" });
+        }
+      } catch (err) {
+        if (err.response.data.message) {
+          enqueueSnackbar(err.response.data.message, { variant: "error" });
+        } else {
+          enqueueSnackbar(
+            "Something went wrong. Check that the backend is running, reachable and returns valid JSON.",
+            { variant: "error" }
+          );
+        }
+      }
+      setLoading(false);
+    }
   };
 
   // TODO: CRIO_TASK_MODULE_REGISTER - Implement user input validation logic
@@ -57,6 +95,32 @@ const Register = () => {
    * -    Check that confirmPassword field has the same value as password field - Passwords do not match
    */
   const validateInput = (data) => {
+    if (data.username == "") {
+      enqueueSnackbar("Username is a required field", {
+        variant: "warning",
+      });
+      return false;
+    } else if (data.username.length < 6) {
+      enqueueSnackbar("Username must be at least 6 characters", {
+        variant: "warning",
+      });
+      return false;
+    } else if (data.password == "") {
+      enqueueSnackbar("Password is a required field", {
+        variant: "warning",
+      });
+      return false;
+    } else if (data.password.length < 6) {
+      enqueueSnackbar("Password must be at least 6 characters", {
+        variant: "warning",
+      });
+      return false;
+    } else if (data.password !== data.confirmPassword) {
+      enqueueSnackbar("Passwords do not match", { variant: "warning" });
+      return false;
+    } else {
+      return true;
+    }
   };
 
   return (
@@ -70,6 +134,7 @@ const Register = () => {
       <Box className="content">
         <Stack spacing={2} className="form">
           <h2 className="title">Register</h2>
+
           <TextField
             id="username"
             label="Username"
@@ -77,6 +142,8 @@ const Register = () => {
             title="Username"
             name="username"
             placeholder="Enter Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
             fullWidth
           />
           <TextField
@@ -85,6 +152,8 @@ const Register = () => {
             label="Password"
             name="password"
             type="password"
+            value={password}
+            onChange={(e) => setPassword(e.target.value)}
             helperText="Password must be atleast 6 characters length"
             fullWidth
             placeholder="Enter a password with minimum 6 characters"
@@ -95,16 +164,27 @@ const Register = () => {
             label="Confirm Password"
             name="confirmPassword"
             type="password"
+            value={confirmPassword}
+            onChange={(e) => setConfirmPassword(e.target.value)}
             fullWidth
           />
-           <Button className="button" variant="contained">
-            Register Now
-           </Button>
+          {!loading && (
+            <Button className="button" variant="contained" onClick={register}>
+              Register Now
+            </Button>
+          )}
+
+          {loading && (
+            <Box textAlign="center">
+              <CircularProgress />
+            </Box>
+          )}
+
           <p className="secondary-action">
             Already have an account?{" "}
-             <a className="link" href="#">
+            <a className="link" href="#">
               Login here
-             </a>
+            </a>
           </p>
         </Stack>
       </Box>
