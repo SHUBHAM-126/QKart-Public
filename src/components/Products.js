@@ -101,6 +101,25 @@ const Products = () => {
         debounceSearch={debounceSearch}
       />
 
+      <TextField
+        className="search-mobile"
+        placeholder="Search for items/categories"
+        size="small"
+        InputProps={{
+          endAdornment: (
+            <InputAdornment position="end">
+              <Search color="primary" />
+            </InputAdornment>
+          ),
+        }}
+        fullwidth
+        value={searchTerm}
+        onChange={(e) => {
+          setSearchTerm(e.target.value);
+          debounceSearch(e, 500);
+        }}
+      />
+
       <Grid container>
         <Grid item className="product-grid">
           <Box className="hero">
