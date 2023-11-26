@@ -4,8 +4,17 @@ import Box from "@mui/material/Box";
 import React from "react";
 import "./Header.css";
 import { useHistory, Link } from "react-router-dom";
+import { InputAdornment, TextField } from "@mui/material";
+import SearchOutlinedIcon from "@mui/icons-material/SearchOutlined";
 
-const Header = ({ children, hasHiddenAuthButtons }) => {
+const Header = ({
+  children,
+  hasHiddenAuthButtons,
+  hasSearch,
+  searchTerm,
+  setSearchTerm,
+  debounceSearch,
+}) => {
   const history = useHistory();
 
   let username = localStorage.getItem("username");
@@ -27,6 +36,27 @@ const Header = ({ children, hasHiddenAuthButtons }) => {
           Back to explore
         </Button>
       )}
+
+      {hasSearch && (
+        <TextField
+          className="search-desktop"
+          placeholder="Search for items/categories"
+          size="small"
+          InputProps={{
+            endAdornment: (
+              <InputAdornment position="end">
+                <SearchOutlinedIcon color="primary" />
+              </InputAdornment>
+            ),
+          }}
+          value={searchTerm}
+          onChange={(e) => {
+            setSearchTerm(e.target.value);
+            debounceSearch(e, 500);
+          }}
+        />
+      )}
+
       {!token && !hasHiddenAuthButtons && (
         <Stack direction="row" spacing={2}>
           <Link to="/login">
