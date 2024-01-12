@@ -3,6 +3,7 @@ import ipConfig from "./ipConfig.json";
 import { Route, Switch } from "react-router-dom";
 import Login from "./components/Login";
 import Products from "./components/Products";
+import Checkout from "./components/Checkout"
 import { useState } from "react";
 
 export const config = {
@@ -17,6 +18,7 @@ function App() {
         
         <Route path='/register' component={Register} />
         <Route path='/login' component={Login} />
+        <Route path='/checkout' component={Checkout} />
         <Route path='/' component={Products} />
       </Switch>
       

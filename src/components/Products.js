@@ -11,14 +11,16 @@ import axios from "axios";
 import { useSnackbar } from "notistack";
 import React, { useEffect, useState } from "react";
 import { config } from "../App";
+import Cart from "./Cart";
 import Footer from "./Footer";
 import Header from "./Header";
 import ProductCard from "./ProductCard";
 import "./Products.css";
+import { useHistory } from "react-router-dom";
 
 /**
  * @typedef {Object} CartItem -  - Data on product added to cart
- * 
+ *
  * @property {string} name - The name or title of the product in cart
  * @property {string} qty - The quantity of product added to cart
  * @property {string} category - The category that the product belongs to
@@ -29,8 +31,6 @@ import "./Products.css";
  */
 
 const Products = () => {
-
-  
   /**
    * Make API call to get the products list and store it to display the products
    *
@@ -68,13 +68,18 @@ const Products = () => {
    * }
    */
 
-
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const { enqueueSnackbar } = useSnackbar();
   const [searchTerm, setSearchTerm] = useState("");
   const [noProductsFound, setNoProductsFound] = useState(false);
   const [timer, setTimer] = useState("");
+  const [cartItems, setCartItems] = useState([]);
+
+  const history = useHistory();
+
+  // let username = localStorage.getItem("username");
+  let token = localStorage.getItem("token");
 
   const performAPICall = async (url) => {
     setNoProductsFound(false);
@@ -104,12 +109,12 @@ const Products = () => {
       const res = await performAPICall(`${config.endpoint}/products`);
       if (res.length > 0) {
         setProducts(res);
+        console.log(products);
       }
     };
 
     getProducts();
   }, []);
-
 
   /**
    * Definition for search handler
@@ -200,11 +205,24 @@ const Products = () => {
    * }
    */
 
-   const fetchCart = async (token) => {
+  //Fetching cart data
+  useEffect(() => {
+    fetchCart(token);
+  }, []);
+
+  const fetchCart = async (token) => {
     if (!token) return;
 
     try {
       // TODO: CRIO_TASK_MODULE_CART - Pass Bearer token inside "Authorization" header to get data from "GET /cart" API and return the response data
+      const data = await axios.get(`${config.endpoint}/cart`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      setCartItems(data);
+      console.log("cart item",data);
     } catch (e) {
       if (e.response && e.response.status === 400) {
         enqueueSnackbar(e.response.data.message, { variant: "error" });
@@ -220,7 +238,7 @@ const Products = () => {
     }
   };
 
-   // TODO: CRIO_TASK_MODULE_CART - Return if a product already exists in the cart
+  // TODO: CRIO_TASK_MODULE_CART - Return if a product already exists in the cart
   /**
    * Return if a product already is present in the cart
    *
@@ -233,7 +251,22 @@ const Products = () => {
    *    Whether a product of given "productId" exists in the "items" array
    *
    */
-   const isItemInCart = (items, productId) => {
+  const isItemInCart = (items, productId) => {
+
+    if(!items.data.length){
+      return false
+    }
+
+    let present = false;
+
+    items.data.forEach((item) => {
+      //console.log(item.productId, productId)
+      if (item.productId == productId) {
+        present = true
+      }
+    });
+
+    return present;
   };
 
   /**
@@ -280,6 +313,50 @@ const Products = () => {
     qty,
     options = { preventDuplicate: false }
   ) => {
+    if (!token) {
+      enqueueSnackbar("Login to add an item to the Cart", {
+        variant: "warning",
+      });
+      return;
+    }
+
+    if (options.preventDuplicate && isItemInCart(items, productId)) {
+      enqueueSnackbar(
+        "Item already in cart. Use the cart sidebar to update quantity or remove item.",
+        {
+          variant: "warning",
+        }
+      );
+      return 
+    }
+
+    try {
+      const data = await axios.post(
+        `${config.endpoint}/cart`,
+        {
+          productId: productId,
+          qty: qty,
+        },
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+
+      //console.log("POST", data);
+      setCartItems(data)
+    } catch (e) {
+      if (e.response && e.response.status === 400) {
+        enqueueSnackbar(e.response.data.message, { variant: "error" });
+      } else {
+        enqueueSnackbar("Something went wrong. Failed to update the cart!", {
+          variant: "error",
+        });
+      }
+      return null;
+    }
   };
 
   return (
@@ -310,56 +387,84 @@ const Products = () => {
         }}
       />
 
-      <Grid container>
-        <Grid item className="product-grid">
-          <Box className="hero">
-            <p className="hero-heading">
-              India's <span className="hero-highlight">FASTEST DELIVERY</span>{" "}
-              to your door step
-            </p>
-          </Box>
+      {/* PRODUCTS & CART CONTAINER */}
+
+      <Grid container spacing={0} mt={0}>
+        {/* PRODUCTS CONTAINER */}
+
+        <Grid item md={token ? 9 : 12} py={0}>
+          <Grid container>
+            <Grid item className="product-grid">
+              <Box className="hero">
+                <p className="hero-heading">
+                  India's{" "}
+                  <span className="hero-highlight">FASTEST DELIVERY</span> to
+                  your door step
+                </p>
+              </Box>
+            </Grid>
+          </Grid>
+
+          {products.length > 0 && !loading && (
+            <Grid container spacing={2} py={5} px={{ xs: 1, md: 2 }}>
+              {products.map((product) => {
+                return (
+                  <Grid item xs={12} md={3} key={product.name}>
+                    <ProductCard
+                      product={product}
+                      handleAddToCart={() =>
+                        addToCart(
+                          token,
+                          cartItems,
+                          products,
+                          product._id,
+                          1,
+                          { preventDuplicate: true }
+                        )
+                      }
+                    />
+                  </Grid>
+                );
+              })}
+            </Grid>
+          )}
+
+          {loading && (
+            <Box
+              minHeight={400}
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <CircularProgress />
+              <Typography>Loading Products...</Typography>
+            </Box>
+          )}
+
+          {noProductsFound && (
+            <Box
+              minHeight={400}
+              display="flex"
+              flexDirection="column"
+              alignItems="center"
+              justifyContent="center"
+            >
+              <SentimentDissatisfied />
+              <Typography>No Products Found</Typography>
+            </Box>
+          )}
         </Grid>
+
+        {/* Cart container */}
+        {token && (
+          <Grid item md={3} style={{ background: "#E9F5E1" }}>
+            {cartItems && <Cart products={products} items={cartItems.data} handleQuantity = {addToCart} />}
+          </Grid>
+        )}
       </Grid>
 
-      {products.length > 0 && !loading && (
-        <Grid container spacing={2} py={5} px={{ xs: 1, md: 2 }}>
-          {products.map((product) => {
-            return (
-              <Grid item xs={12} md={3} key={product.name}>
-                <ProductCard product={product} />
-              </Grid>
-            );
-          })}
-        </Grid>
-      )}
-
-      {loading && (
-        <Box
-          minHeight={400}
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <CircularProgress />
-          <Typography>Loading Products...</Typography>
-        </Box>
-      )}
-
-      {noProductsFound && (
-        <Box
-          minHeight={400}
-          display="flex"
-          flexDirection="column"
-          alignItems="center"
-          justifyContent="center"
-        >
-          <SentimentDissatisfied />
-          <Typography>No Products Found</Typography>
-        </Box>
-      )}
-
-       {/* TODO: CRIO_TASK_MODULE_CART - Display the Cart component */}
+      {/* TODO: CRIO_TASK_MODULE_CART - Display the Cart component */}
 
       <Footer />
     </div>

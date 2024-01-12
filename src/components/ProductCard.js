@@ -29,7 +29,7 @@ const ProductCard = ({ product, handleAddToCart }) => {
         />
       </CardContent>
       <CardActions>
-        <Button variant="contained" startIcon = {<AddShoppingCartOutlined />} sx={{width:'100%'}}>
+        <Button variant="contained" startIcon = {<AddShoppingCartOutlined />} sx={{width:'100%'}} onClick={handleAddToCart}>
           Add to cart
         </Button>
       </CardActions>

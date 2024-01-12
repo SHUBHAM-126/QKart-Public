@@ -11,7 +11,7 @@ import { Box } from "@mui/system";
 import axios from "axios";
 import { useSnackbar } from "notistack";
 import React, { useEffect, useState } from "react";
-import { useHistory } from "react-router-dom";
+import { useHistory, useLocation } from "react-router-dom";
 import { config } from "../App";
 import Cart, { getTotalCartValue, generateCartItemsFrom } from "./Cart";
 import "./Checkout.css";
@@ -47,12 +47,13 @@ import Header from "./Header";
 const Checkout = () => {
 
 
+  const location = useLocation();
+  const data = location.state;
 
+  console.log(data.items)
 
-
-
-
-
+  const products = data.products
+  const items = data.items
 
   return (
     <>
