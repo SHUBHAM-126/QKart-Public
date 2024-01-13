@@ -222,7 +222,7 @@ const Products = () => {
       });
 
       setCartItems(data);
-      console.log("cart item",data);
+      console.log("cart item",data.data);
     } catch (e) {
       if (e.response && e.response.status === 400) {
         enqueueSnackbar(e.response.data.message, { variant: "error" });
@@ -371,6 +371,7 @@ const Products = () => {
       <TextField
         className="search-mobile"
         placeholder="Search for items/categories"
+        fullWidth
         size="small"
         InputProps={{
           endAdornment: (

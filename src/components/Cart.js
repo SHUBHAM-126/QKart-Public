@@ -48,17 +48,6 @@ import "./Cart.css";
  *
  */
 
-// const testCartData = [
-//   {
-//     productId: "KCRwjF7lN97HnEaY",
-//     qty: 3,
-//   },
-//   {
-//     productId: "BW0jAAeDJmlZCF8i",
-//     qty: 2,
-//   },
-// ];
-
 export const generateCartItemsFrom = (cartData=[], productsData) => {
 
   if(!cartData.length){
@@ -67,13 +56,13 @@ export const generateCartItemsFrom = (cartData=[], productsData) => {
 
   const result = cartData.map((item) => {
     const pid = item.productId;
-    const pdata = productsData.filter((item) => item._id == pid);
+    const pdata = productsData.filter((item) => item._id === pid);
     const cdata = [{ ...pdata[0], qty: item.qty }];
     return cdata;
   });
 
-  console.log("result");
-  console.log(result);
+  // console.log("result");
+  // console.log(result);
 
   return result;
 };
@@ -99,6 +88,38 @@ export const getTotalCartValue = (items = []) => {
   return total;
 };
 
+// TODO: CRIO_TASK_MODULE_CHECKOUT - Implement function to return total cart quantity
+/**
+ * Return the sum of quantities of all products added to the cart
+ *
+ * @param { Array.<CartItem> } items
+ *    Array of objects with complete data on products in cart
+ *
+ * @returns { Number }
+ *    Total quantity of products added to the cart
+ *
+ */
+ export const getTotalItems = (items = []) => {
+};
+
+// TODO: CRIO_TASK_MODULE_CHECKOUT - Add static quantity view for Checkout page cart
+/**
+ * Component to display the current quantity for a product and + and - buttons to update product quantity on cart
+ * 
+ * @param {Number} value
+ *    Current quantity of product in cart
+ * 
+ * @param {Function} handleAdd
+ *    Handler function which adds 1 more of a product to cart
+ * 
+ * @param {Function} handleDelete
+ *    Handler function which reduces the quantity of a product in cart by 1
+ * 
+ * @param {Boolean} isReadOnly
+ *    If product quantity on cart is to be displayed as read only without the + - options to change quantity
+ * 
+ */
+
 /**
  * Component to display the current quantity for a product and + and - buttons to update product quantity on cart
  *
@@ -113,18 +134,18 @@ export const getTotalCartValue = (items = []) => {
  *
  *
  */
-const ItemQuantity = ({ value, handleAdd, handleDelete }) => {
+const ItemQuantity = ({ value, handleAdd, handleDelete, isReadOnly }) => {
   return (
     <Stack direction="row" alignItems="center">
-      <IconButton size="small" color="primary" onClick={handleDelete}>
+      {!isReadOnly && <IconButton size="small" color="primary" onClick={handleDelete}>
         <RemoveOutlined />
-      </IconButton>
+      </IconButton>}
       <Box padding="0.5rem" data-testid="item-qty">
-        {value}
+        {isReadOnly ? 'Qty:' : ''}{value}
       </Box>
-      <IconButton size="small" color="primary" onClick={handleAdd}>
+      {!isReadOnly && <IconButton size="small" color="primary" onClick={handleAdd}>
         <AddOutlined />
-      </IconButton>
+      </IconButton>}
     </Stack>
   );
 };
@@ -143,8 +164,17 @@ const ItemQuantity = ({ value, handleAdd, handleDelete }) => {
  *
  *
  */
-const Cart = ({ products, items = [], handleQuantity }) => {
-  const cartItems = generateCartItemsFrom(items, products);
+const Cart = ({ products, items = [], handleQuantity, isReadOnly }) => {
+
+  let cartItems;
+
+  if(isReadOnly){
+    cartItems = items
+  }
+  else{
+    cartItems = generateCartItemsFrom(items, products);
+  }
+  
   let token = localStorage.getItem("token");
   const history = useHistory();
 
@@ -167,7 +197,7 @@ const Cart = ({ products, items = [], handleQuantity }) => {
 
         {cartItems.map((item) => {
             return (
-              <Box display="flex" alignItems="flex-start" padding="1rem">
+              <Box display="flex" alignItems="flex-start" padding="1rem" key={item[0]._id}>
                 <Box className="image-container">
                   <img
                     // Add product image
@@ -196,6 +226,7 @@ const Cart = ({ products, items = [], handleQuantity }) => {
                     value={item[0].qty}
                     handleAdd = {() => handleQuantity(token, items, products, item[0]._id, item[0].qty+1)}
                     handleDelete = {() => handleQuantity(token, items, products, item[0]._id, item[0].qty-1)}
+                    isReadOnly = {isReadOnly ? true : false} 
                     />
                     <Box padding="0.5rem" fontWeight="700">
                       ${item[0].cost}
@@ -229,19 +260,19 @@ const Cart = ({ products, items = [], handleQuantity }) => {
           </Box>
         </Box>
 
-        <Box display="flex" justifyContent="flex-end" className="cart-footer">
+        {!isReadOnly && <Box display="flex" justifyContent="flex-end" className="cart-footer">
           <Button
             color="primary"
             variant="contained"
             startIcon={<ShoppingCart />}
             className="checkout-btn"
             onClick = {() => {
-              history.push({pathname: "/checkout", state: {products: products, items: cartItems}})
+              history.push({pathname: "/checkout"})
             }}
           >
             Checkout
           </Button>
-        </Box>
+        </Box>}
       </Box>
     </>
   );
